@@ -157,6 +157,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Incidnet local persistence (may contain MCP credentials and telemetry)
+workspace/
+
 # Spyder project settings
 .spyderproject
 .spyproject

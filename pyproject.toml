@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "incidnet"
+version = "1.0.0"
+description = "Plataforma agent-first para investigação de incidentes N2/N3"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "apscheduler>=3.10,<4",
+  "bleach>=6.1,<7",
+  "fastapi>=0.115,<1",
+  "jinja2>=3.1,<4",
+  "markdown>=3.7,<4",
+  "mcp>=1.27,<2",
+  "openai>=1.66,<3",
+  "openpyxl>=3.1,<4",
+  "python-dotenv>=1.0,<2",
+  "python-multipart>=0.0.20,<1",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

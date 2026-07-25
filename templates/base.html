@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Incidnet{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {darkMode: 'class', theme: {extend: {colors: {
+        ink: '#08090b', panel: '#101216', line: '#252830', accent: '#7c5cff'
+      }}}}
+    </script>
+    <style>
+      html { color-scheme: dark; }
+      body { background: radial-gradient(circle at 15% -10%, #201841 0, #08090b 35%); }
+      .prose p { margin:.55rem 0 } .prose ul { list-style:disc; padding-left:1.25rem }
+      .prose code { color:#c4b5fd; background:#1d1a2e; padding:.12rem .3rem; border-radius:.3rem }
+      .prose h3 { font-weight:650; font-size:1.05rem; margin-bottom:.4rem }
+    </style>
+  </head>
+  <body class="min-h-screen text-zinc-200 antialiased">
+    <header class="border-b border-line/80 bg-ink/70 backdrop-blur sticky top-0 z-20">
+      <div class="mx-auto max-w-7xl h-16 px-5 flex items-center justify-between">
+        <a href="/" class="font-semibold tracking-tight text-white">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-accent mr-2 shadow-[0_0_18px_#7c5cff]"></span>Incidnet
+        </a>
+        <span class="text-xs text-zinc-500 uppercase tracking-[.2em]">Agent-first incident ops</span>
+      </div>
+    </header>
+    <main class="mx-auto max-w-7xl px-5 py-10">{% block content %}{% endblock %}</main>
+  </body>
+</html>
+

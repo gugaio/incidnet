@@ -1,0 +1,31 @@
+# Controle de versão e metadados
+.git
+.gitignore
+.github
+
+# Segredos e dados locais (nunca entram na imagem)
+.env
+workspace/
+
+# Ambientes e artefatos Python
+.venv
+venv
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Testes e ferramentas de desenvolvimento
+tests/
+
+# Sistema operacional / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml

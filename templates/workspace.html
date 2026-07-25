@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ workspace.name }} · Incidnet{% endblock %}
+{% block content %}
+<div class="flex items-start justify-between gap-5 mb-9">
+  <div><a href="/" class="text-xs text-zinc-500 hover:text-white">← Workspaces</a>
+    <h1 class="text-3xl font-semibold text-white tracking-tight mt-2">{{ workspace.name }}</h1>
+    <div class="text-xs text-zinc-600 font-mono mt-1">{{ workspace.workspace_id }}</div>
+  </div>
+  <div class="flex items-center gap-3">
+    <span class="rounded-full px-3 py-1 text-xs border border-emerald-900 bg-emerald-950/40 text-emerald-400">Workspace ativo</span>
+  </div>
+</div>
+
+{% if request.query_params.get('saved') %}<div class="mb-6 text-sm rounded-lg border border-emerald-900 bg-emerald-950/30 text-emerald-400 px-4 py-3">Configurações salvas.</div>{% endif %}
+{% if request.query_params.get('deleted') %}<div class="mb-6 text-sm rounded-lg border border-emerald-900 bg-emerald-950/30 text-emerald-400 px-4 py-3">Incidente removido.</div>{% endif %}
+
+<div class="grid xl:grid-cols-[1fr_340px] gap-6">
+  <section class="rounded-xl border border-line bg-panel p-6">
+    <div class="flex items-center justify-between gap-4"><h2 class="text-white font-medium">Incidentes</h2><span class="text-xs text-zinc-600">Clique para abrir</span></div>
+    <div class="mt-5 space-y-3">
+      {% for incident in incidents %}
+      <div class="relative group rounded-xl border border-line bg-ink/40 transition-all duration-150 hover:-translate-y-0.5 hover:border-violet-700 hover:bg-violet-950/20 hover:shadow-lg hover:shadow-black/20 focus-within:border-violet-600">
+        <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}" aria-label="Abrir incidente: {{ incident.title }}" class="block rounded-xl px-5 py-4 pr-16 outline-none">
+          <div class="flex min-w-0 items-center justify-between gap-4">
+            <div class="min-w-0"><div class="text-sm font-medium text-zinc-200 truncate transition-colors group-hover:text-white">{{ incident.title }}</div>
+              <div class="text-xs text-zinc-500 mt-1">{{ incident.affected_users|length }} usuários · {{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+            </div>
+            <div class="hidden sm:flex shrink-0 items-center gap-3"><span class="text-[10px] rounded-full border px-2 py-1 {{ 'border-violet-900 text-violet-400' if incident.status == 'RESOLVED' else ('border-zinc-700 text-zinc-400' if incident.status == 'CLOSED' else 'border-amber-900 text-amber-400') }}">{{ incident.status }}</span><span class="text-xs font-medium text-violet-300 opacity-0 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1">Abrir incidente →</span></div>
+          </div>
+          <div class="sm:hidden mt-3 text-xs font-medium text-violet-300">Abrir incidente →</div>
+        </a>
+        <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/delete" onsubmit="return confirm('Excluir este incidente e todo o seu histórico? Esta ação não pode ser desfeita.')" class="absolute right-3 top-3 z-10">
+          <button type="submit" aria-label="Excluir incidente" title="Excluir incidente" class="rounded-lg border border-rose-950 p-2 text-rose-500 opacity-0 transition hover:bg-rose-950/40 hover:text-rose-300 focus:opacity-100 group-hover:opacity-100">✕</button>
+        </form>
+      </div>
+      {% else %}<div class="py-10 text-sm text-zinc-600 text-center">Nenhum incidente aberto.</div>{% endfor %}
+    </div>
+  </section>
+
+  <details class="rounded-xl border border-line bg-panel">
+    <summary class="cursor-pointer px-6 py-5 text-sm font-medium text-zinc-400 hover:text-white list-none flex items-center justify-between">
+      <span>+ Novo incidente</span>
+    </summary>
+    <form method="post" action="/w/{{ workspace.workspace_id }}/incidents/create" class="border-t border-line px-6 pb-6 pt-5">
+      <label class="block text-xs text-zinc-400 mb-2">Título</label>
+      <input required name="title" placeholder="Falha de playback em Smart TVs" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">
+      <label class="block text-xs text-zinc-400 mb-2">Descrição</label>
+      <textarea name="description" rows="3" placeholder="Descreva o device afetado, o comportamento observado e qualquer contexto útil…" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4"></textarea>
+      <label class="block text-xs text-zinc-400 mb-2">User IDs</label>
+      <textarea required name="affected_users" rows="4" placeholder="UUIDs separados por vírgula ou linha" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-5"></textarea>
+      <button class="rounded-lg bg-accent text-white font-medium px-4 py-2.5 hover:brightness-110">Abrir incidente</button>
+    </form>
+  </details>
+</div>
+
+<form method="post" action="/w/{{ workspace.workspace_id }}/settings" class="mt-6 rounded-xl border border-line bg-panel p-6">
+  <div class="flex justify-between items-start mb-6"><div><h2 class="text-white font-medium">Agente e integrações</h2>
+    <p class="text-sm text-zinc-500 mt-1">Regras de domínio e agenda diária. Segredos ficam exclusivamente no <code>.env</code>.</p></div>
+    <button class="rounded-lg border border-zinc-700 px-4 py-2 text-sm hover:border-zinc-500">Salvar alterações</button>
+  </div>
+  <div class="grid lg:grid-cols-[1.2fr_.8fr] gap-6">
+    <div><label class="block text-xs text-zinc-400 mb-2">PROMPT_BASE.md</label>
+      <textarea name="prompt_base" rows="15" class="font-mono text-sm w-full rounded-lg bg-ink border border-line px-4 py-3 outline-none focus:border-accent">{{ prompt_base }}</textarea>
+    </div>
+    <div class="space-y-4">
+      <div class="rounded-lg border border-line bg-ink p-4"><div class="text-xs text-zinc-400">MCP / NPAW</div><div class="mt-2 text-sm {{ 'text-emerald-400' if mcp_configured else 'text-amber-400' }}">{{ 'Configurado pelo ambiente' if mcp_configured else 'Variáveis de ambiente pendentes' }}</div><div class="text-[11px] text-zinc-600 mt-2">URL, account code e credencial nunca são persistidos; edite apenas o <code>.env</code>.</div></div>
+      <div class="rounded-lg border border-line bg-ink p-4"><div class="text-xs text-zinc-400">Análise LLM</div><div class="mt-2 text-sm {{ 'text-emerald-400' if llm_configured else 'text-zinc-500' }}">{{ 'OpenAI configurada pelo ambiente' if llm_configured else 'Fallback determinístico ativo' }}</div></div>
+      <div><label class="block text-xs text-zinc-400 mb-2">Cron diário</label><input name="cron_schedule" value="{{ workspace.cron_schedule }}" class="font-mono w-full rounded-lg bg-ink border border-line px-3 py-2.5"><div class="text-[11px] text-zinc-600 mt-2">Timezone: America/Sao_Paulo</div></div>
+    </div>
+  </div>
+</form>
+{% endblock %}

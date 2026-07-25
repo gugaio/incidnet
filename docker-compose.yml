@@ -1,0 +1,18 @@
+services:
+  incidnet:
+    build: .
+    image: incidnet:latest
+    container_name: incidnet
+    ports:
+      - "8000:8000"
+    # Variáveis (NPAW_*, OPENAI_*, INCIDNET_TIMEZONE) vêm do .env local.
+    # Copie .env.example para .env antes de subir.
+    env_file:
+      - .env
+    # Persiste incidentes, feed e telemetria fora do container.
+    volumes:
+      - incidnet-data:/app/workspace
+    restart: unless-stopped
+
+volumes:
+  incidnet-data:

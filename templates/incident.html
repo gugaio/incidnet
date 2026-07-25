@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}{{ incident.title }} · Incidnet{% endblock %}
+{% block content %}
+<a href="/w/{{ workspace.workspace_id }}" class="text-xs text-zinc-500 hover:text-white">← {{ workspace.name }}</a>
+<div class="mt-3 flex flex-col md:flex-row md:items-end justify-between gap-5">
+  <div><div class="flex items-center gap-3"><span class="text-[10px] rounded-full border px-2 py-1 {{ 'border-violet-900 text-violet-400' if incident.status == 'RESOLVED' else ('border-zinc-700 text-zinc-400' if incident.status == 'CLOSED' else 'border-amber-900 text-amber-400') }}">{{ incident.status }}</span><span class="text-xs font-mono text-zinc-600">{{ incident.incident_id }}</span></div>
+    <h1 class="text-3xl font-semibold text-white mt-3 tracking-tight">{{ incident.title }}</h1>
+    {% if incident.description %}<p class="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">{{ incident.description }}</p>{% endif %}
+  </div>
+  <div class="flex items-center gap-2">
+    <form id="investigate-form" method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/investigate">
+      <button class="rounded-lg bg-white text-black font-medium px-4 py-2.5 hover:bg-zinc-200">✦ Rodar investigação agora</button>
+    </form>
+    <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/export?fmt=xlsx" class="rounded-lg border border-zinc-700 text-zinc-300 px-3 py-2.5 hover:bg-zinc-800 inline-block" title="Exportar usuários em XLSX">↓ XLSX</a>
+    <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/export?fmt=csv" class="rounded-lg border border-zinc-700 text-zinc-300 px-3 py-2.5 hover:bg-zinc-800 inline-block" title="Exportar usuários em CSV">↓ CSV</a>
+    <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/delete" onsubmit="return confirm('Excluir este incidente e todo o seu histórico? Esta ação não pode ser desfeita.')">
+      <button type="submit" class="rounded-lg border border-rose-950 text-rose-400 px-3 py-2.5 hover:bg-rose-950/40" aria-label="Excluir incidente" title="Excluir incidente">Excluir</button>
+    </form>
+  </div>
+</div>
+<div id="run-panel" class="mt-5 rounded-xl border border-violet-900 bg-violet-950/20 p-4" {% if not request.query_params.get('running') %}hidden{% endif %}>
+  <div class="flex items-center justify-between text-sm text-violet-200">
+    <span id="run-label">Investigação iniciada…</span>
+    <span id="run-count" class="font-mono text-xs text-violet-300">0 / 0</span>
+  </div>
+  <div class="h-2 bg-zinc-800 rounded mt-3 overflow-hidden">
+    <div id="run-bar" class="h-full bg-violet-500 transition-all duration-300" style="width:0%"></div>
+  </div>
+  <div id="run-counts" class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400"></div>
+</div>
+{% if request.query_params.get('saved') %}<div class="mt-5 text-sm rounded-lg border border-emerald-900 bg-emerald-950/30 text-emerald-400 px-4 py-3">Contexto do incidente atualizado.</div>{% endif %}
+
+<details class="mt-5 rounded-xl border border-line bg-panel">
+  <summary class="cursor-pointer px-5 py-4 text-sm text-zinc-400 hover:text-white">Editar título e descrição</summary>
+  <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/details" class="border-t border-line p-5">
+    <label class="block text-xs text-zinc-400 mb-2">Título</label>
+    <input required name="title" value="{{ incident.title }}" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">
+    <label class="block text-xs text-zinc-400 mb-2">Descrição</label>
+    <textarea name="description" rows="4" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">{{ incident.description }}</textarea>
+    <button class="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700">Salvar contexto</button>
+  </form>
+</details>
+
+<section class="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-8">
+  <div class="rounded-xl border border-line bg-panel p-4"><div class="text-xs text-zinc-500">Saúde geral</div><div class="text-2xl font-semibold text-white mt-2"><span id="health-pct">{{ health }}%</span></div><div class="h-1.5 bg-zinc-800 rounded mt-3 overflow-hidden"><div id="health-bar" class="h-full bg-emerald-500" style="width:{{ health }}%"></div></div></div>
+  <div class="rounded-xl border border-line bg-panel p-4"><div class="text-xs text-zinc-500">Usuários</div><div class="text-2xl font-semibold text-white mt-2">{{ incident.affected_users|length }}</div><div class="text-xs text-zinc-600 mt-3"><span id="analyzed-count">{{ diagnoses|length }} analisados</span></div></div>
+  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/GOOD" class="block rounded-xl border border-line bg-panel p-4 hover:border-emerald-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Sem falha</div><div class="text-2xl font-semibold text-emerald-400 mt-2"><span id="count-good">{{ counts.GOOD }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>GOOD</span><span>Ver usuários →</span></div></a>
+  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/BAD" class="block rounded-xl border border-line bg-panel p-4 hover:border-rose-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Com falha</div><div class="text-2xl font-semibold text-rose-400 mt-2"><span id="count-bad">{{ counts.BAD }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>BAD</span><span>Ver usuários →</span></div></a>
+  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/INCONCLUSIVE" class="block rounded-xl border border-line bg-panel p-4 hover:border-amber-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Sem evidência</div><div class="text-2xl font-semibold text-amber-400 mt-2"><span id="count-inconclusive">{{ counts.INCONCLUSIVE }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>INCONCLUSIVE</span><span>Ver usuários →</span></div></a>
+  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/RESOLVED" class="block rounded-xl border border-line bg-panel p-4 hover:border-violet-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Resolvidos</div><div class="text-2xl font-semibold text-violet-400 mt-2"><span id="count-resolved">{{ counts.RESOLVED }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>RESOLVED</span><span>Ver usuários →</span></div></a>
+</section>
+
+<div class="grid xl:grid-cols-[1fr_320px] gap-7 mt-7">
+  <section>
+    <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/comment" class="rounded-xl border border-line bg-panel p-5 mb-6">
+      <textarea required name="content" rows="3" placeholder="Comente, ensine uma regra ao agente ou pergunte mencionando @agente…" class="w-full resize-y bg-transparent outline-none text-sm placeholder:text-zinc-600"></textarea>
+      <div class="flex items-center justify-between mt-3 pt-3 border-t border-line"><input name="author" value="Equipe N2/N3" class="bg-transparent text-xs text-zinc-500 outline-none"><button class="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700">Publicar</button></div>
+      <p class="text-[11px] text-zinc-600 mt-2">Mencione <span class="text-zinc-400">@agente</span> para receber uma resposta baseada na última rodada de diagnóstico. Dicas e correções relevantes viram memória e orientam as próximas investigações.</p>
+    </form>
+    <div class="relative before:absolute before:left-[19px] before:top-5 before:bottom-5 before:w-px before:bg-line space-y-5">
+      {% for entry in entries %}
+      <article class="relative pl-12">
+        <div class="absolute left-0 top-4 w-10 h-10 rounded-full border border-line bg-ink flex items-center justify-center">{{ "🤖" if entry.author_type == "AGENT" else "👤" }}</div>
+        <div class="rounded-xl border {{ 'border-rose-900/70' if entry.kind == 'ERROR' else 'border-line' }} bg-panel p-5">
+          <div class="flex flex-wrap items-center gap-2 mb-3"><span class="text-[10px] px-2 py-1 rounded-full {{ 'bg-violet-950 text-violet-300' if entry.author_type == 'AGENT' else 'bg-sky-950 text-sky-300' }}">{{ entry.author_type }}</span><span class="text-xs text-zinc-400">{{ entry.author }}</span><span class="text-xs text-zinc-600">· {{ entry.timestamp.strftime('%d/%m/%Y %H:%M') }}</span></div>
+          <div class="prose text-sm text-zinc-300 leading-relaxed">{{ entry.content|markdown }}</div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  <aside>
+    {% if workspace_memory or incident_memory %}
+    <div class="rounded-xl border border-line bg-panel p-5 mb-5">
+      <h2 class="text-sm font-medium text-white flex items-center gap-2"><span>🧠</span> Memória do agente</h2>
+      <p class="text-[11px] text-zinc-600 mt-1">Conhecimento usado nas investigações deste incidente.</p>
+      {% if workspace_memory %}
+      <div class="mt-4">
+        <div class="text-[10px] uppercase tracking-wide text-zinc-500 mb-2">Workspace</div>
+        <ul class="space-y-2">
+          {% for entry in workspace_memory %}
+          <li class="text-xs text-zinc-300 leading-relaxed rounded-lg bg-ink border border-line p-3">{{ entry.content }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if incident_memory %}
+      <div class="mt-4">
+        <div class="text-[10px] uppercase tracking-wide text-zinc-500 mb-2">Este incidente</div>
+        <ul class="space-y-2">
+          {% for entry in incident_memory %}
+          <li class="text-xs text-zinc-300 leading-relaxed rounded-lg bg-ink border border-line p-3">{{ entry.content }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="rounded-xl border border-line bg-panel p-5 sticky top-24">
+      <h2 class="text-sm font-medium text-white">Análises</h2>
+      <p class="text-[11px] text-zinc-600 mt-1">Snapshots imutáveis produzidos pelos agentes.</p>
+      <div class="mt-4 space-y-3">
+      {% for analysis in analyses %}
+        <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/analyses/{{ analysis.analysis_id }}" class="block rounded-lg bg-ink border border-line p-3 hover:border-violet-800 transition">
+          <div class="flex items-start justify-between gap-2"><span class="font-mono text-[11px] text-violet-300">{{ analysis.analysis_id }}</span><span class="text-[10px] text-zinc-600">{{ analysis.created_at.strftime('%d/%m %H:%M') }}</span></div>
+          <div class="mt-2 text-xs text-zinc-400">{{ analysis.type }} · {{ analysis.agent_name }}</div>
+          <div class="mt-3 flex flex-wrap gap-2 text-[10px]"><span class="text-emerald-400">{{ analysis.summary.good }} GOOD</span><span class="text-rose-400">{{ analysis.summary.bad }} BAD</span><span class="text-amber-400">{{ analysis.summary.inconclusive }} INC.</span></div>
+        </a>
+      {% else %}<p class="text-xs text-zinc-600 py-4">Nenhuma análise concluída ainda.</p>{% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+<script>
+(function () {
+  const WORKSPACE_ID = "{{ workspace.workspace_id }}";
+  const INCIDENT_ID = "{{ incident.incident_id }}";
+  const PROGRESS_URL = "/api/workspaces/" + WORKSPACE_ID + "/incidents/" + INCIDENT_ID + "/progress";
+  let pollTimer = null;
+
+  function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
+    return div.innerHTML;
+  }
+
+  function diagnosisBodyHtml(u) {
+    if (!u) {
+      return '<div class="mt-2 text-[10px] inline-block rounded-full px-2 py-1 bg-zinc-900 text-zinc-500">PENDENTE</div>';
+    }
+    const statusClass = u.status === "RESOLVED" ? "bg-violet-950 text-violet-400"
+      : u.status === "GOOD" ? "bg-emerald-950 text-emerald-400"
+      : u.status === "BAD" ? "bg-rose-950 text-rose-400"
+      : "bg-amber-950 text-amber-400";
+    const userId = encodeURIComponent(u.user_id);
+    const action = u.resolved
+      ? '<form method="post" action="/w/' + WORKSPACE_ID + '/i/' + INCIDENT_ID + '/users/' + userId + '/reopen"><button type="submit" class="text-[10px] text-zinc-600 hover:text-violet-400">↩ Reabrir</button></form>'
+      : '<form method="post" action="/w/' + WORKSPACE_ID + '/i/' + INCIDENT_ID + '/users/' + userId + '/resolve"><button type="submit" class="text-[10px] text-zinc-600 hover:text-emerald-400">✓ Resolver</button></form>';
+    return (
+      '<div class="mt-2 flex items-center gap-2 flex-wrap">' +
+      '<div class="text-[10px] inline-block rounded-full px-2 py-1 ' + statusClass + '">' + u.status + "</div>" +
+      action +
+      "</div>" +
+      '<p class="text-xs text-zinc-500 mt-1">' + escapeHtml(u.justification) + "</p>"
+    );
+  }
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function applyState(state) {
+    const progress = state.progress;
+    const panel = document.getElementById("run-panel");
+    if (panel) {
+      const showPanel = Boolean(state.running || (progress && progress.phase === "error"));
+      panel.hidden = !showPanel;
+      if (progress) {
+        const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
+        const bar = document.getElementById("run-bar");
+        if (bar) bar.style.width = pct + "%";
+        setText("run-count", progress.done + " / " + progress.total);
+        let label = "Analisando usuários…";
+        if (progress.phase === "connecting") label = progress.message || "Conectando ao MCP…";
+        else if (progress.phase === "error") label = "Falha: " + (progress.message || "erro desconhecido");
+        else if (progress.phase === "done") label = "Rodada concluída";
+        setText("run-label", label);
+        const countsEl = document.getElementById("run-counts");
+        if (countsEl) {
+          const counts = progress.counts || {};
+          countsEl.innerHTML =
+            '<span class="text-emerald-400">GOOD ' + (counts.GOOD || 0) + "</span>" +
+            '<span class="text-rose-400">BAD ' + (counts.BAD || 0) + "</span>" +
+            '<span class="text-amber-400">INCONCLUSIVE ' + (counts.INCONCLUSIVE || 0) + "</span>";
+        }
+      }
+    }
+
+    setText("health-pct", state.health + "%");
+    const healthBar = document.getElementById("health-bar");
+    if (healthBar) healthBar.style.width = state.health + "%";
+    setText("analyzed-count", state.users.length + " analisados");
+    const counts = state.counts || {};
+    setText("count-good", counts.GOOD || 0);
+    setText("count-bad", counts.BAD || 0);
+    setText("count-inconclusive", counts.INCONCLUSIVE || 0);
+    setText("count-resolved", counts.RESOLVED || 0);
+
+    const byUser = {};
+    state.users.forEach(function (u) { byUser[u.user_id] = u; });
+    document.querySelectorAll("[data-diagnosis-body]").forEach(function (el) {
+      const userId = el.getAttribute("data-diagnosis-body");
+      el.innerHTML = diagnosisBodyHtml(byUser[userId]);
+    });
+  }
+
+  async function fetchAndApply() {
+    try {
+      const response = await fetch(PROGRESS_URL);
+      if (!response.ok) return null;
+      const state = await response.json();
+      applyState(state);
+      return state;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function startPolling() {
+    if (pollTimer) return;
+    pollTimer = setInterval(async function () {
+      const state = await fetchAndApply();
+      if (state && !state.running && pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }, 1500);
+  }
+
+  const form = document.getElementById("investigate-form");
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const panel = document.getElementById("run-panel");
+      if (panel) panel.hidden = false;
+      fetch(form.action, { method: "POST", redirect: "manual" }).finally(function () {
+        fetchAndApply().then(function (state) {
+          if (state && state.running) startPolling();
+        });
+      });
+    });
+  }
+
+  // Resume polling automatically if a round is already running (e.g. after a
+  // reload, or one triggered by the cron scheduler in the background).
+  fetchAndApply().then(function (state) {
+    if (state && state.running) startPolling();
+  });
+})();
+</script>
+{% endblock %}

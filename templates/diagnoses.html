@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ selected_status }} · {{ incident.title }} · Incidnet{% endblock %}
+{% block content %}
+<a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}" class="text-xs text-zinc-500 hover:text-white">← Voltar ao incidente</a>
+
+<div class="mt-4 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+  <div>
+    <div class="text-xs font-mono text-zinc-600">{{ incident.incident_id }}</div>
+    <h1 class="text-3xl font-semibold text-white tracking-tight mt-2">Diagnósticos por usuário</h1>
+    <p class="mt-2 text-sm text-zinc-400">{{ incident.title }}</p>
+  </div>
+  <div class="rounded-full px-4 py-2 text-sm border
+    {{ 'border-emerald-900 bg-emerald-950/40 text-emerald-400' if selected_status == 'GOOD'
+       else ('border-rose-900 bg-rose-950/40 text-rose-400' if selected_status == 'BAD'
+       else ('border-violet-900 bg-violet-950/40 text-violet-400' if selected_status == 'RESOLVED'
+       else 'border-amber-900 bg-amber-950/40 text-amber-400')) }}">
+    {{ selected_status }} · {{ diagnoses|length }}
+  </div>
+</div>
+
+<nav class="grid sm:grid-cols-4 gap-3 mt-8">
+  {% for status, meta in status_meta.items() %}
+  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/{{ status }}"
+     class="rounded-xl border p-4 transition
+     {{ 'border-zinc-500 bg-zinc-800/70' if status == selected_status else 'border-line bg-panel hover:border-zinc-600' }}">
+    <div class="text-xs text-zinc-500">{{ meta.label }}</div>
+    <div class="mt-2 flex items-end justify-between">
+      <span class="text-sm font-medium
+        {{ 'text-emerald-400' if status == 'GOOD' else ('text-rose-400' if status == 'BAD' else ('text-violet-400' if status == 'RESOLVED' else 'text-amber-400')) }}">{{ status }}</span>
+      <span class="text-2xl font-semibold text-white">{{ counts[status] }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</nav>
+
+<section class="mt-7">
+  <div class="mb-5">
+    <h2 class="text-lg font-medium text-white">{{ selected_meta.label }}</h2>
+    <p class="text-sm text-zinc-500 mt-1">{{ selected_meta.description }}</p>
+  </div>
+
+  <div class="space-y-4">
+    {% for item in diagnoses %}
+    <article class="rounded-xl border border-line bg-panel p-5">
+      <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="font-mono text-sm text-zinc-200 break-all">{{ item.user_id }}</div>
+          <p class="text-sm text-zinc-400 leading-relaxed mt-3">{{ item.justification }}</p>
+        </div>
+        <div class="shrink-0 flex items-center gap-3">
+          <span class="rounded-full px-3 py-1 text-[10px]
+            {{ 'bg-violet-950 text-violet-400' if item.status == 'RESOLVED'
+               else ('bg-emerald-950 text-emerald-400' if item.status == 'GOOD'
+               else ('bg-rose-950 text-rose-400' if item.status == 'BAD'
+               else 'bg-amber-950 text-amber-400')) }}">{{ item.status }}</span>
+          {% if item.resolved %}
+          <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/users/{{ item.user_id }}/reopen">
+            <button type="submit" class="text-xs text-zinc-600 hover:text-violet-400 whitespace-nowrap">↩ Reabrir</button>
+          </form>
+          {% else %}
+          <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/users/{{ item.user_id }}/resolve">
+            <button type="submit" class="text-xs text-zinc-600 hover:text-emerald-400 whitespace-nowrap">✓ Resolver</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5 pt-4 border-t border-line">
+        <div><div class="text-[10px] uppercase tracking-wide text-zinc-600">Sessões</div><div class="text-sm text-zinc-300 mt-1">{{ item.summary.get('sessions', 0) }}</div></div>
+        <div><div class="text-[10px] uppercase tracking-wide text-zinc-600">Plays</div><div class="text-sm text-zinc-300 mt-1">{{ item.summary.get('plays', 0) }}</div></div>
+        <div><div class="text-[10px] uppercase tracking-wide text-zinc-600">Com erros</div><div class="text-sm text-zinc-300 mt-1">{{ item.summary.get('sessions_with_errors', 0) }}</div></div>
+        <div><div class="text-[10px] uppercase tracking-wide text-zinc-600">Com buffering</div><div class="text-sm text-zinc-300 mt-1">{{ item.summary.get('sessions_with_buffering', 0) }}</div></div>
+      </div>
+
+      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-[11px] text-zinc-600">
+        <span>{{ item.investigated_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        <span>{{ item.source }}</span>
+        {% if item.scope.get('target_device') %}<span>Alvo: {{ item.scope.get('target_device') }}</span>{% endif %}
+        {% if item.scope.get('total_rows') is not none %}<span>{{ item.scope.get('total_rows') }} rows antes do filtro</span>{% endif %}
+        {% if item.period.get('timezone') %}<span>{{ item.period.get('timezone') }}</span>{% endif %}
+        {% if item.resolved and item.resolved_by %}<span class="text-violet-700">Resolvido por {{ item.resolved_by }}{% if item.resolved_at %} · {{ item.resolved_at.strftime('%d/%m/%Y %H:%M') }}{% endif %}</span>{% endif %}
+      </div>
+    </article>
+    {% else %}
+    <div class="rounded-xl border border-dashed border-line py-16 text-center">
+      <div class="text-sm text-zinc-500">Nenhum usuário com status {{ selected_status }}.</div>
+      <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}" class="inline-block mt-4 text-xs text-violet-400 hover:text-violet-300">Voltar ao incidente</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

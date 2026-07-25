@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis.analysis_id }} · {{ incident.title }} · Incidnet{% endblock %}
+{% block content %}
+<a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}" class="text-xs text-zinc-500 hover:text-white">← Voltar ao incidente</a>
+
+<div class="mt-4 flex flex-col md:flex-row md:items-end justify-between gap-5">
+  <div>
+    <div class="font-mono text-xs text-violet-300">{{ analysis.analysis_id }}</div>
+    <h1 class="mt-2 text-3xl font-semibold text-white tracking-tight">Análise do incidente</h1>
+    <p class="mt-2 text-sm text-zinc-400">{{ incident.title }} · {{ analysis.type }} · {{ analysis.agent_name }}</p>
+  </div>
+  <div class="text-xs text-zinc-600">{{ analysis.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+</div>
+
+{% if analysis.parent_analysis_id %}
+<a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/analyses/{{ analysis.parent_analysis_id }}" class="block mt-5 rounded-lg border border-violet-900 bg-violet-950/20 px-4 py-3 text-xs text-violet-300 hover:bg-violet-950/40">Derivada de {{ analysis.parent_analysis_id }} →</a>
+{% endif %}
+
+<section class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-7">
+  <div class="rounded-xl border border-line bg-panel p-4"><div class="text-xs text-zinc-500">Usuários</div><div class="mt-2 text-2xl font-semibold text-white">{{ analysis.summary.total_users }}</div></div>
+  <div class="rounded-xl border border-emerald-900/60 bg-panel p-4"><div class="text-xs text-zinc-500">Sem falha</div><div class="mt-2 text-2xl font-semibold text-emerald-400">{{ analysis.summary.good }}</div></div>
+  <div class="rounded-xl border border-rose-900/60 bg-panel p-4"><div class="text-xs text-zinc-500">Com falha</div><div class="mt-2 text-2xl font-semibold text-rose-400">{{ analysis.summary.bad }}</div></div>
+  <div class="rounded-xl border border-amber-900/60 bg-panel p-4"><div class="text-xs text-zinc-500">Inconclusivos</div><div class="mt-2 text-2xl font-semibold text-amber-400">{{ analysis.summary.inconclusive }}</div></div>
+</section>
+
+{% if analysis.content %}
+<section class="mt-7 rounded-xl border border-line bg-panel p-5"><h2 class="text-sm font-medium text-white">Conclusão do agente</h2><div class="prose mt-3 text-sm text-zinc-300 leading-relaxed">{{ analysis.content|markdown }}</div></section>
+{% endif %}
+
+<section class="mt-7">
+  <h2 class="text-lg font-medium text-white">Diagnósticos desta análise</h2>
+  <div class="mt-4 space-y-3">
+  {% for item in diagnoses %}
+    <article class="rounded-xl border border-line bg-panel p-5">
+      <div class="flex items-start justify-between gap-4"><div class="min-w-0"><div class="font-mono text-sm text-zinc-200 break-all">{{ item.user_id }}</div><p class="mt-2 text-sm text-zinc-400">{{ item.justification }}</p></div><span class="shrink-0 rounded-full px-3 py-1 text-[10px] {{ 'bg-emerald-950 text-emerald-400' if item.classification == 'GOOD' else ('bg-rose-950 text-rose-400' if item.classification == 'BAD' else 'bg-amber-950 text-amber-400') }}">{{ item.classification }}</span></div>
+      <div class="mt-4 text-[11px] text-zinc-600">{{ item.source }} · {{ item.investigated_at.strftime('%d/%m/%Y %H:%M') }}</div>
+    </article>
+  {% else %}<div class="rounded-xl border border-dashed border-line p-8 text-sm text-zinc-600">Esta análise não contém diagnósticos por usuário.</div>{% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Incidnet · Incident ops{% endblock %}
+{% block content %}
+<section class="grid lg:grid-cols-[1.2fr_.8fr] gap-12 items-center min-h-[70vh]">
+  <div>
+    <div class="text-xs uppercase tracking-[.24em] text-violet-400 mb-5">N2/N3 investigation workspace</div>
+    <h1 class="text-5xl md:text-6xl font-semibold tracking-[-.05em] text-white leading-[.95]">
+      Diagnóstico por agentes.<br><span class="text-zinc-500">Acompanhamento contínuo de incidentes.</span>
+    </h1>
+    <p class="mt-7 max-w-2xl text-lg text-zinc-400 leading-relaxed">
+      Telemetria MCP, análise por IA e conhecimento humano em uma timeline rastreável.
+    </p>
+    {% if workspaces %}
+    <div class="mt-10 flex flex-wrap gap-3">
+      {% for workspace in workspaces %}
+      <a href="/w/{{ workspace.workspace_id }}" class="px-4 py-2.5 rounded-lg border border-line bg-panel hover:border-zinc-600 transition text-sm">
+        {{ workspace.name }} <span class="text-zinc-600 ml-2">→</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <form method="post" action="/api/workspaces/create" class="rounded-2xl border border-line bg-panel/90 p-7 shadow-2xl shadow-black/30">
+    <div class="text-white font-medium text-xl">Criar novo workspace</div>
+    <p class="text-sm text-zinc-500 mt-1 mb-6">Organize incidentes por produto, stack, squad ou o que fizer mais sentido para o seu time.</p>
+    <label class="block text-xs text-zinc-400 mb-2">Nome</label>
+    <input required name="name" placeholder="Ex: Globoplay" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">
+    <button class="w-full rounded-lg bg-white text-black font-medium px-4 py-2.5 hover:bg-zinc-200 transition">Criar workspace</button>
+  </form>
+</section>
+{% endblock %}
