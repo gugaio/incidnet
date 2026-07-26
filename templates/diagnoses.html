@@ -22,7 +22,7 @@
   {% for status, meta in status_meta.items() %}
   <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/{{ status }}"
      class="rounded-xl border p-4 transition
-     {{ 'border-zinc-500 bg-zinc-800/70' if status == selected_status else 'border-line bg-panel hover:border-zinc-600' }}">
+     {{ 'border-accent bg-sky-50 shadow-sm' if status == selected_status else 'border-line bg-panel hover:border-sky-200 hover:shadow-sm' }}">
     <div class="text-xs text-zinc-500">{{ meta.label }}</div>
     <div class="mt-2 flex items-end justify-between">
       <span class="text-sm font-medium

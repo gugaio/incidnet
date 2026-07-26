@@ -1,23 +1,32 @@
 {% extends "base.html" %}
 {% block title %}{{ incident.title }} · Incidnet{% endblock %}
 {% block content %}
-<a href="/w/{{ workspace.workspace_id }}" class="text-xs text-zinc-500 hover:text-white">← {{ workspace.name }}</a>
-<div class="mt-3 flex flex-col md:flex-row md:items-end justify-between gap-5">
-  <div><div class="flex items-center gap-3"><span class="text-[10px] rounded-full border px-2 py-1 {{ 'border-violet-900 text-violet-400' if incident.status == 'RESOLVED' else ('border-zinc-700 text-zinc-400' if incident.status == 'CLOSED' else 'border-amber-900 text-amber-400') }}">{{ incident.status }}</span><span class="text-xs font-mono text-zinc-600">{{ incident.incident_id }}</span></div>
-    <h1 class="text-3xl font-semibold text-white mt-3 tracking-tight">{{ incident.title }}</h1>
-    {% if incident.description %}<p class="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">{{ incident.description }}</p>{% endif %}
-  </div>
-  <div class="flex items-center gap-2">
-    <form id="investigate-form" method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/investigate">
-      <button class="rounded-lg bg-white text-black font-medium px-4 py-2.5 hover:bg-zinc-200">✦ Rodar investigação agora</button>
-    </form>
-    <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/export?fmt=xlsx" class="rounded-lg border border-zinc-700 text-zinc-300 px-3 py-2.5 hover:bg-zinc-800 inline-block" title="Exportar usuários em XLSX">↓ XLSX</a>
-    <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/export?fmt=csv" class="rounded-lg border border-zinc-700 text-zinc-300 px-3 py-2.5 hover:bg-zinc-800 inline-block" title="Exportar usuários em CSV">↓ CSV</a>
-    <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/delete" onsubmit="return confirm('Excluir este incidente e todo o seu histórico? Esta ação não pode ser desfeita.')">
-      <button type="submit" class="rounded-lg border border-rose-950 text-rose-400 px-3 py-2.5 hover:bg-rose-950/40" aria-label="Excluir incidente" title="Excluir incidente">Excluir</button>
-    </form>
-  </div>
+<div class="flex items-center justify-between gap-4 mb-6 px-2">
+  <a href="/w/{{ workspace.workspace_id }}" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-accent transition-colors">← <span>{{ workspace.name }}</span></a>
+  <div class="flex items-center gap-2"><span class="rounded-full border px-3 py-1 text-[11px] font-semibold {{ 'border-violet-900 text-violet-400' if incident.status == 'RESOLVED' else ('border-zinc-700 text-zinc-400' if incident.status == 'CLOSED' else 'border-amber-900 text-amber-400') }}">{{ incident.status }}</span><span class="font-mono text-[11px] text-zinc-600">{{ incident.incident_id }}</span></div>
 </div>
+
+<div class="grid xl:grid-cols-[260px_minmax(0,1fr)_310px] gap-6 items-start rounded-[28px] border border-white/80 bg-white/70 p-4 sm:p-6 shadow-[0_24px_70px_rgba(30,58,89,.14)] backdrop-blur-md">
+  <aside class="xl:sticky xl:top-24">
+    <section class="rounded-2xl border border-line bg-panel p-5 shadow-[0_10px_30px_rgba(34,61,88,.07)]">
+      <p class="text-[11px] uppercase tracking-[.16em] text-accent font-semibold">Incidente em análise</p>
+      <h1 class="mt-3 text-xl font-semibold text-slate-900 leading-tight tracking-tight">{{ incident.title }}</h1>
+      {% if incident.description %}<p class="mt-3 text-sm leading-relaxed text-zinc-400">{{ incident.description }}</p>{% endif %}
+      <dl class="mt-6 space-y-3 border-t border-line pt-5 text-sm"><div class="flex justify-between gap-3"><dt class="text-zinc-500">Usuários afetados</dt><dd class="font-semibold text-slate-900">{{ incident.affected_users|length }}</dd></div><div class="flex justify-between gap-3"><dt class="text-zinc-500">Saúde geral</dt><dd class="font-semibold text-emerald-400"><span id="health-pct">{{ health }}%</span></dd></div></dl>
+      <div class="h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden"><div id="health-bar" class="h-full bg-emerald-500 rounded-full" style="width:{{ health }}%"></div></div>
+    </section>
+    <details class="mt-4 rounded-xl border border-line bg-panel">
+      <summary class="cursor-pointer px-4 py-3 text-xs font-medium text-zinc-500">Editar contexto</summary>
+      <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/details" class="border-t border-line p-4"><input required name="title" value="{{ incident.title }}" class="w-full rounded-lg bg-ink border border-line px-3 py-2 text-sm outline-none focus:border-accent mb-3"><textarea name="description" rows="3" class="w-full rounded-lg bg-ink border border-line px-3 py-2 text-sm outline-none focus:border-accent">{{ incident.description }}</textarea><button class="mt-3 text-xs font-medium text-accent">Salvar alterações</button></form>
+    </details>
+  </aside>
+
+  <section class="min-w-0">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div><p class="text-[11px] uppercase tracking-[.16em] text-zinc-500 font-semibold">Timeline de investigação</p><p class="mt-1 text-sm text-zinc-400">Agentes e equipe trabalhando no mesmo contexto.</p></div>
+      <form id="investigate-form" method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/investigate"><button class="rounded-lg bg-accent text-white font-medium px-4 py-2.5 text-sm shadow-sm hover:brightness-110">✦ Iniciar investigação</button></form>
+    </div>
+    <section class="rounded-2xl border border-line bg-panel p-5 shadow-[0_10px_30px_rgba(34,61,88,.07)] mb-5"><div class="flex items-center justify-between gap-3"><div><h2 class="text-base font-semibold text-white tracking-tight">Distribuição dos usuários</h2><p id="analyzed-count" class="text-[11px] text-zinc-600 mt-1">{{ diagnoses|length }} analisados</p></div><span class="text-[11px] text-zinc-500">Clique para detalhar</span></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4"><a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/GOOD" class="group rounded-xl bg-emerald-950 p-3 cursor-pointer transition duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-500"><span class="text-[11px] text-zinc-500">Sem falha <span class="opacity-0 transition-opacity group-hover:opacity-100">↗</span></span><strong id="count-good" class="block text-2xl text-emerald-400 mt-1">{{ counts.GOOD }}</strong></a><a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/BAD" class="group rounded-xl bg-rose-950 p-3 cursor-pointer transition duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-rose-400/50 focus:outline-none focus:ring-2 focus:ring-rose-500"><span class="text-[11px] text-zinc-500">Com falha <span class="opacity-0 transition-opacity group-hover:opacity-100">↗</span></span><strong id="count-bad" class="block text-2xl text-rose-400 mt-1">{{ counts.BAD }}</strong></a><a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/INCONCLUSIVE" class="group rounded-xl bg-amber-50 p-3 cursor-pointer transition duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-500"><span class="text-[11px] text-zinc-500">Sem evidência <span class="opacity-0 transition-opacity group-hover:opacity-100">↗</span></span><strong id="count-inconclusive" class="block text-2xl text-amber-400 mt-1">{{ counts.INCONCLUSIVE }}</strong></a><a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/RESOLVED" class="group rounded-xl bg-violet-950 p-3 cursor-pointer transition duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-500"><span class="text-[11px] text-zinc-500">Resolvidos <span class="opacity-0 transition-opacity group-hover:opacity-100">↗</span></span><strong id="count-resolved" class="block text-2xl text-violet-400 mt-1">{{ counts.RESOLVED }}</strong></a></div></section>
 <div id="run-panel" class="mt-5 rounded-xl border border-violet-900 bg-violet-950/20 p-4" {% if not request.query_params.get('running') %}hidden{% endif %}>
   <div class="flex items-center justify-between text-sm text-violet-200">
     <span id="run-label">Investigação iniciada…</span>
@@ -29,47 +38,18 @@
   <div id="run-counts" class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400"></div>
 </div>
 {% if request.query_params.get('saved') %}<div class="mt-5 text-sm rounded-lg border border-emerald-900 bg-emerald-950/30 text-emerald-400 px-4 py-3">Contexto do incidente atualizado.</div>{% endif %}
-
-<details class="mt-5 rounded-xl border border-line bg-panel">
-  <summary class="cursor-pointer px-5 py-4 text-sm text-zinc-400 hover:text-white">Editar título e descrição</summary>
-  <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/details" class="border-t border-line p-5">
-    <label class="block text-xs text-zinc-400 mb-2">Título</label>
-    <input required name="title" value="{{ incident.title }}" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">
-    <label class="block text-xs text-zinc-400 mb-2">Descrição</label>
-    <textarea name="description" rows="4" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">{{ incident.description }}</textarea>
-    <button class="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700">Salvar contexto</button>
-  </form>
-</details>
-
-<section class="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-8">
-  <div class="rounded-xl border border-line bg-panel p-4"><div class="text-xs text-zinc-500">Saúde geral</div><div class="text-2xl font-semibold text-white mt-2"><span id="health-pct">{{ health }}%</span></div><div class="h-1.5 bg-zinc-800 rounded mt-3 overflow-hidden"><div id="health-bar" class="h-full bg-emerald-500" style="width:{{ health }}%"></div></div></div>
-  <div class="rounded-xl border border-line bg-panel p-4"><div class="text-xs text-zinc-500">Usuários</div><div class="text-2xl font-semibold text-white mt-2">{{ incident.affected_users|length }}</div><div class="text-xs text-zinc-600 mt-3"><span id="analyzed-count">{{ diagnoses|length }} analisados</span></div></div>
-  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/GOOD" class="block rounded-xl border border-line bg-panel p-4 hover:border-emerald-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Sem falha</div><div class="text-2xl font-semibold text-emerald-400 mt-2"><span id="count-good">{{ counts.GOOD }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>GOOD</span><span>Ver usuários →</span></div></a>
-  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/BAD" class="block rounded-xl border border-line bg-panel p-4 hover:border-rose-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Com falha</div><div class="text-2xl font-semibold text-rose-400 mt-2"><span id="count-bad">{{ counts.BAD }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>BAD</span><span>Ver usuários →</span></div></a>
-  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/INCONCLUSIVE" class="block rounded-xl border border-line bg-panel p-4 hover:border-amber-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Sem evidência</div><div class="text-2xl font-semibold text-amber-400 mt-2"><span id="count-inconclusive">{{ counts.INCONCLUSIVE }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>INCONCLUSIVE</span><span>Ver usuários →</span></div></a>
-  <a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/diagnoses/RESOLVED" class="block rounded-xl border border-line bg-panel p-4 hover:border-violet-800 hover:-translate-y-0.5 transition"><div class="text-xs text-zinc-500">Resolvidos</div><div class="text-2xl font-semibold text-violet-400 mt-2"><span id="count-resolved">{{ counts.RESOLVED }}</span></div><div class="flex items-center justify-between text-xs text-zinc-600 mt-3"><span>RESOLVED</span><span>Ver usuários →</span></div></a>
-</section>
-
-<div class="grid xl:grid-cols-[1fr_320px] gap-7 mt-7">
-  <section>
-    <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/comment" class="rounded-xl border border-line bg-panel p-5 mb-6">
-      <textarea required name="content" rows="3" placeholder="Comente, ensine uma regra ao agente ou pergunte mencionando @agente…" class="w-full resize-y bg-transparent outline-none text-sm placeholder:text-zinc-600"></textarea>
-      <div class="flex items-center justify-between mt-3 pt-3 border-t border-line"><input name="author" value="Equipe N2/N3" class="bg-transparent text-xs text-zinc-500 outline-none"><button class="rounded-lg bg-zinc-800 px-4 py-2 text-sm hover:bg-zinc-700">Publicar</button></div>
-      <p class="text-[11px] text-zinc-600 mt-2">Mencione <span class="text-zinc-400">@agente</span> para receber uma resposta baseada na última rodada de diagnóstico. Dicas e correções relevantes viram memória e orientam as próximas investigações.</p>
-    </form>
-    <div class="relative before:absolute before:left-[19px] before:top-5 before:bottom-5 before:w-px before:bg-line space-y-5">
+    <form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/comment" class="rounded-2xl border border-line bg-panel p-5 mb-5 shadow-sm"><textarea required name="content" rows="2" placeholder="Pergunte algo ao @agente ou deixe uma atualização para a equipe…" class="w-full resize-y bg-transparent outline-none text-sm placeholder:text-zinc-600"></textarea><div class="flex items-center justify-between mt-3 pt-3 border-t border-line"><input name="author" value="Equipe N2/N3" class="bg-transparent text-xs text-zinc-500 outline-none"><button class="rounded-lg bg-accent text-white px-4 py-2 text-sm">Enviar</button></div></form>
+    <div class="space-y-4">
       {% for entry in entries %}
-      <article class="relative pl-12">
-        <div class="absolute left-0 top-4 w-10 h-10 rounded-full border border-line bg-ink flex items-center justify-center">{{ "🤖" if entry.author_type == "AGENT" else "👤" }}</div>
-        <div class="rounded-xl border {{ 'border-rose-900/70' if entry.kind == 'ERROR' else 'border-line' }} bg-panel p-5">
-          <div class="flex flex-wrap items-center gap-2 mb-3"><span class="text-[10px] px-2 py-1 rounded-full {{ 'bg-violet-950 text-violet-300' if entry.author_type == 'AGENT' else 'bg-sky-950 text-sky-300' }}">{{ entry.author_type }}</span><span class="text-xs text-zinc-400">{{ entry.author }}</span><span class="text-xs text-zinc-600">· {{ entry.timestamp.strftime('%d/%m/%Y %H:%M') }}</span></div>
+      <article class="rounded-2xl border {{ 'border-rose-900/70' if entry.kind == 'ERROR' else 'border-line' }} bg-panel p-5 shadow-sm">
+        <div class="flex items-start gap-3"><div class="shrink-0 h-10 w-10 rounded-full flex items-center justify-center {{ 'bg-violet-950 text-violet-400' if entry.author_type == 'AGENT' else 'bg-sky-950 text-sky-300' }}">{{ '✦' if entry.author_type == 'AGENT' else '●' }}</div><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2 mb-3"><span class="text-sm font-semibold text-white">{{ entry.author }}</span><span class="text-[10px] px-2 py-1 rounded-full {{ 'bg-violet-950 text-violet-300' if entry.author_type == 'AGENT' else 'bg-sky-950 text-sky-300' }}">{{ entry.author_type }}</span><span class="text-xs text-zinc-600">{{ entry.timestamp.strftime('%d/%m/%Y %H:%M') }}</span></div>
           <div class="prose text-sm text-zinc-300 leading-relaxed">{{ entry.content|markdown }}</div>
-        </div>
+        </div></div>
       </article>
       {% endfor %}
     </div>
   </section>
-  <aside>
+  <aside class="space-y-4 xl:sticky xl:top-24">
     {% if workspace_memory or incident_memory %}
     <div class="rounded-xl border border-line bg-panel p-5 mb-5">
       <h2 class="text-sm font-medium text-white flex items-center gap-2"><span>🧠</span> Memória do agente</h2>
@@ -96,7 +76,7 @@
       {% endif %}
     </div>
     {% endif %}
-    <div class="rounded-xl border border-line bg-panel p-5 sticky top-24">
+    <div class="rounded-2xl border border-line bg-panel p-5 shadow-sm">
       <h2 class="text-sm font-medium text-white">Análises</h2>
       <p class="text-[11px] text-zinc-600 mt-1">Snapshots imutáveis produzidos pelos agentes.</p>
       <div class="mt-4 space-y-3">
@@ -109,6 +89,7 @@
       {% else %}<p class="text-xs text-zinc-600 py-4">Nenhuma análise concluída ainda.</p>{% endfor %}
       </div>
     </div>
+    <div class="flex gap-2"><a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/export?fmt=xlsx" class="text-xs text-accent hover:underline">Exportar XLSX</a><a href="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/export?fmt=csv" class="text-xs text-accent hover:underline">CSV</a><form method="post" action="/w/{{ workspace.workspace_id }}/i/{{ incident.incident_id }}/delete" onsubmit="return confirm('Excluir este incidente e todo o seu histórico? Esta ação não pode ser desfeita.')"><button class="text-xs text-rose-400 hover:underline">Excluir</button></form></div>
   </aside>
 </div>
 <script>
