@@ -3,7 +3,6 @@
 {% block content %}
 <section class="grid lg:grid-cols-[1.2fr_.8fr] gap-12 items-center min-h-[70vh]">
   <div>
-    <div class="text-xs uppercase tracking-[.24em] text-violet-400 mb-5">N2/N3 investigation workspace</div>
     <h1 class="text-5xl md:text-6xl font-semibold tracking-[-.05em] text-slate-900 leading-[.95]">
       Diagnóstico por agentes.<br><span class="text-slate-500">Acompanhamento contínuo de incidentes.</span>
     </h1>
@@ -20,12 +19,15 @@
     </div>
     {% endif %}
   </div>
-  <form method="post" action="/api/workspaces/create" class="rounded-2xl border border-line bg-panel/90 p-7 shadow-2xl shadow-black/30">
-    <div class="text-white font-medium text-xl">Criar novo workspace</div>
-    <p class="text-sm text-zinc-500 mt-1 mb-6">Organize incidentes por produto, stack, squad ou o que fizer mais sentido para o seu time.</p>
+  <form method="post" action="/api/workspaces/create" class="relative overflow-hidden rounded-3xl border border-white bg-panel p-7 shadow-[0_22px_55px_rgba(39,54,83,.18)]">
+    <div class="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-sky-100 blur-2xl"></div>
+    <div class="relative inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700"><span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span> COMEÇAR AGORA</div>
+    <div class="relative mt-4 text-slate-900 font-semibold text-2xl tracking-tight">Centralize o próximo incidente.</div>
+    <p class="relative text-sm text-zinc-500 mt-2 mb-6 leading-relaxed">Crie um workspace para reunir telemetria, contexto e a investigação do seu time em um só lugar.</p>
     <label class="block text-xs text-zinc-400 mb-2">Nome</label>
     <input required name="name" placeholder="Ex: Globoplay" class="w-full rounded-lg bg-ink border border-line px-3 py-2.5 outline-none focus:border-accent mb-4">
-    <button class="w-full rounded-lg bg-white text-black font-medium px-4 py-2.5 hover:bg-zinc-200 transition">Criar workspace</button>
+    <button class="relative w-full rounded-xl bg-accent text-white font-semibold px-4 py-3 hover:brightness-110 hover:-translate-y-0.5 shadow-[0_10px_22px_rgba(33,125,181,.28)] transition">Criar meu workspace <span class="ml-1">→</span></button>
+    <p class="relative mt-3 text-center text-[11px] text-zinc-500">Leva menos de um minuto para configurar.</p>
   </form>
 </section>
 {% endblock %}

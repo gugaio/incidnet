@@ -13,10 +13,10 @@
     <style>
       html { color-scheme: light; }
       body {
-        background: radial-gradient(circle at 86% 4%, rgba(105, 153, 187, .50), transparent 28%),
-          radial-gradient(circle at 10% 100%, rgba(163, 180, 205, .54), transparent 32%), #e8edf4;
+        background: radial-gradient(circle at 20% 5%, rgba(201, 211, 231, .72), transparent 29%),
+          radial-gradient(circle at 84% 88%, rgba(96, 118, 160, .28), transparent 35%), #94a2bc;
       }
-      body::before { content:""; position:fixed; inset:0; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.15) 1px, transparent 1px); background-size:42px 42px; mask-image:linear-gradient(to bottom, black, transparent 75%); opacity:.32; }
+      body::before { content:""; position:fixed; inset:0; pointer-events:none; background:linear-gradient(120deg, rgba(255,255,255,.12), transparent 45%); }
       .prose p { margin:.55rem 0 } .prose ul { list-style:disc; padding-left:1.25rem }
       .prose code { color:#176b9f; background:#eef6fb; padding:.12rem .3rem; border-radius:.3rem }
       .prose h3 { font-weight:650; font-size:1.05rem; margin-bottom:.4rem }
@@ -43,19 +43,19 @@
          standard Tailwind white for buttons, icons and dark surfaces. */
       .bg-panel h1.text-white, .bg-panel h2.text-white,
       .bg-panel h3.text-white, .bg-panel .font-semibold.text-white:not(button) { color:#172033; }
-      .page-surface { position:relative; }
-      @media (min-width: 1024px) { .page-surface { min-height:calc(100vh - 138px); } }
+      .page-surface { position:relative; background:rgba(240,242,246,.94); }
+      @media (min-width: 1024px) { .page-surface { min-height:calc(100vh - 156px); } }
     </style>
   </head>
   <body class="min-h-screen text-zinc-700 antialiased">
-    <header class="border-b border-slate-800/30 bg-[#163b5c]/95 backdrop-blur sticky top-0 z-20 shadow-[0_8px_30px_rgba(22,59,92,.20)]">
-      <div class="mx-auto max-w-[1440px] h-[74px] px-6 flex items-center justify-between">
-        <a href="/" class="font-semibold tracking-tight flex items-center gap-2.5 text-xl" style="color:#fff">
-          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 via-sky-400 to-emerald-300 text-white shadow-[0_5px_18px_rgba(86,181,225,.35)]">⌁</span>Incidnet <span class="font-medium" style="color:#aac2d5">Ops</span>
+    <header class="mx-auto mt-5 max-w-[1440px] rounded-t-[32px] border border-white/70 border-b-0 bg-[#f0f2f6]/95 backdrop-blur z-20 shadow-[0_18px_52px_rgba(39,54,83,.16)]">
+      <div class="h-[78px] px-6 sm:px-8 flex items-center justify-between">
+        <a href="/" class="font-semibold tracking-tight flex items-center gap-2.5 text-xl text-slate-900">
+          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-500 text-white shadow-[0_5px_18px_rgba(86,105,225,.25)]">⌁</span>Incidnet
         </a>
-        <div class="flex items-center gap-4 text-sm" style="color:#d9e8f3"><span class="hidden sm:inline">Central de operações</span><span class="h-9 w-9 rounded-full bg-white/15 text-white flex items-center justify-center border border-white/15">N2</span></div>
+        <div class="flex items-center gap-4 text-sm text-slate-500"><span class="hidden sm:inline">Central de operações</span><span class="h-9 w-9 rounded-full bg-white text-slate-700 flex items-center justify-center border border-slate-200 shadow-sm">N2</span></div>
       </div>
     </header>
-    <main class="page-surface mx-auto max-w-[1440px] px-6 py-8">{% block content %}{% endblock %}</main>
+    <main class="page-surface mx-auto mb-5 max-w-[1440px] rounded-b-[32px] border border-white/70 border-t-0 px-6 py-8 sm:px-8 shadow-[0_22px_55px_rgba(39,54,83,.16)]">{% block content %}{% endblock %}</main>
   </body>
 </html>
